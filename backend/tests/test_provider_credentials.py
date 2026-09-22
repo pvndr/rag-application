@@ -16,6 +16,7 @@ from app.core.security import (
 )
 from app.domain.entities import ProviderCredential, User
 from app.infrastructure.answer_generator_factory import DynamicAnswerGeneratorFactory
+from app.infrastructure.gemini_answer_generator import GeminiAnswerGenerator
 from app.infrastructure.sqlite_store import (
     SqliteProviderCredentialRepository,
     SqliteStore,
@@ -95,6 +96,7 @@ class TestProviderCredentialRepository(unittest.TestCase):
 
         fetched = self.repo.get(self.user1.id, "gemini")
         self.assertIsNotNone(fetched)
+        assert fetched is not None
         self.assertEqual(fetched.masked_key, "fake••••••••1234")
         self.assertEqual(fetched.encrypted_key, "enc_secret_key_1")
 
@@ -123,6 +125,8 @@ class TestProviderCredentialRepository(unittest.TestCase):
         self.repo.save(cred2)
 
         fetched = self.repo.get(self.user1.id, "gemini")
+        self.assertIsNotNone(fetched)
+        assert fetched is not None
         self.assertEqual(fetched.masked_key, "fake••••••••9999")
         self.assertEqual(fetched.encrypted_key, "enc_secret_2")
         self.assertEqual(len(self.repo.list(self.user1.id)), 1)
@@ -224,6 +228,8 @@ class TestDynamicAnswerGeneratorFactory(unittest.TestCase):
         )
 
         generator = factory.get_generator_for_user(self.user.id)
+        self.assertIsInstance(generator, GeminiAnswerGenerator)
+        assert isinstance(generator, GeminiAnswerGenerator)
         self.assertEqual(generator._api_key, custom_raw_key)
 
     def test_factory_falls_back_to_system_key_when_no_user_key(self) -> None:
@@ -236,6 +242,8 @@ class TestDynamicAnswerGeneratorFactory(unittest.TestCase):
         )
 
         generator = factory.get_generator_for_user(self.user.id)
+        self.assertIsInstance(generator, GeminiAnswerGenerator)
+        assert isinstance(generator, GeminiAnswerGenerator)
         self.assertEqual(generator._api_key, "system_fallback_key")
 
     def test_factory_raises_when_no_user_key_and_no_fallback(self) -> None:
