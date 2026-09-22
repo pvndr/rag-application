@@ -1,0 +1,3 @@
+This RAG starter supports PDF, DOCX, and TXT uploads.
+Uploaded files are stored locally before text extraction.
+Extracted text is split into semantic chunks, embedded with all-MiniLM-L6-v2, and stored in ChromaDB with document metadata.

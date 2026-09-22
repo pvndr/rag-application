@@ -1,0 +1,9 @@
+{
+  "include": [
+    "backend"
+  ],
+  "extraPaths": [
+    "backend",
+    "C:/Users/pavan/Downloads/python/Lib/site-packages"
+  ]
+}

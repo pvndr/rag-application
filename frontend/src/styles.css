@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #1f2937;
+  background: #f7f7f4;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.prose :where(p) {
+  margin: 0 0 0.75rem;
+}
+
+.prose :where(p:last-child) {
+  margin-bottom: 0;
+}
+
+.prose :where(ul, ol) {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+
+.prose :where(ul) {
+  list-style: disc;
+}
+
+.prose :where(ol) {
+  list-style: decimal;
+}
+
+.prose :where(a) {
+  color: #92400e;
+  text-decoration: underline;
+}
+
+.prose :where(code) {
+  border-radius: 4px;
+  background: #f5f5f4;
+  padding: 0.1rem 0.25rem;
+  font-size: 0.85em;
+}
+
+.prose :where(pre) {
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #1c1917;
+  color: #fafaf9;
+  padding: 0.85rem;
+}
+
+.prose :where(pre code) {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
