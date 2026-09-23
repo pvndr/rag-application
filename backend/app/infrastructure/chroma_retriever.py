@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Any, cast
+
 from app.domain.entities import Chunk, Document
 from app.domain.repositories import Retriever
 from app.infrastructure.embedding_provider import SentenceTransformerEmbeddingProvider
@@ -13,7 +16,9 @@ class ChromaRetriever(Retriever):
         import chromadb
 
         self._embedding_provider = embedding_provider
-        self._client = chromadb.PersistentClient(path=persist_path)
+        resolved_path = Path(persist_path).resolve()
+        resolved_path.mkdir(parents=True, exist_ok=True)
+        self._client = chromadb.PersistentClient(path=str(resolved_path))
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
             metadata={"hnsw:space": "cosine"},
@@ -28,8 +33,8 @@ class ChromaRetriever(Retriever):
         self._collection.add(
             ids=[chunk.id for chunk in chunks],
             documents=texts,
-            embeddings=embeddings,
-            metadatas=[chunk.metadata for chunk in chunks],
+            embeddings=cast(Any, embeddings),
+            metadatas=cast(Any, [chunk.metadata for chunk in chunks]),
         )
 
     def remove_document(self, document_id: str) -> None:
@@ -46,21 +51,33 @@ class ChromaRetriever(Retriever):
             where={"user_id": user_id},
             include=["documents", "metadatas", "distances"],
         )
-        documents = result.get("documents", [[]])[0]
-        metadatas = result.get("metadatas", [[]])[0]
-        ids = result.get("ids", [[]])[0]
-        distances = result.get("distances", [[]])[0]
+        raw_documents = result.get("documents")
+        documents = raw_documents[0] if raw_documents else []
+
+        raw_metadatas = result.get("metadatas")
+        metadatas = raw_metadatas[0] if raw_metadatas else []
+
+        raw_ids = result.get("ids")
+        ids = raw_ids[0] if raw_ids else []
+
+        raw_distances = result.get("distances")
+        distances = raw_distances[0] if raw_distances else []
 
         chunks: list[Chunk] = []
         for chunk_id, text, metadata, distance in zip(ids, documents, metadatas, distances):
             score = max(0.0, 1.0 - float(distance))
+            clean_metadata: dict[str, str | int | float] = (
+                {k: v for k, v in metadata.items() if isinstance(v, (str, int, float))}
+                if isinstance(metadata, dict)
+                else {}
+            )
             chunks.append(
                 Chunk(
                     id=chunk_id,
-                    document_id=str(metadata.get("document_id", "")),
-                    filename=str(metadata.get("filename", "")),
+                    document_id=str(clean_metadata.get("document_id", "")),
+                    filename=str(clean_metadata.get("filename", "")),
                     text=text,
-                    metadata=metadata,
+                    metadata=clean_metadata,
                     score=round(score, 4),
                 )
             )
