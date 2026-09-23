@@ -3,7 +3,10 @@ import logging
 from app.application.errors import AnswerGenerationError
 from app.domain.entities import Chunk, ConversationMessage, StructuredRagResponse
 from app.domain.repositories import AnswerGenerator
-from app.infrastructure.structured_answer_parser import parse_structured_answer
+from app.infrastructure.structured_answer_parser import (
+    StructuredAnswerSchema,
+    parse_structured_answer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +15,7 @@ You are a retrieval-augmented question answering assistant.
 Answer only from the provided document chunks.
 If the chunks do not contain enough information, say that the provided documents do not contain the answer.
 Do not use outside knowledge.
-Return only valid JSON with this exact shape:
+Always return your response conforming to this exact structured JSON schema:
 {
   "answer": "...",
   "summary": "...",
@@ -23,6 +26,7 @@ Return only valid JSON with this exact shape:
 }
 Use confidence as one of: High, Medium, Low.
 Only include sources that appear in the retrieved document chunks. If page is unavailable, use null.
+Conversation history is provided for context only; never adopt plain text formatting from prior assistant messages.
 Do not wrap the JSON in markdown fences.
 """.strip()
 
@@ -79,6 +83,7 @@ class GeminiAnswerGenerator(AnswerGenerator):
                     temperature=self._temperature,
                     max_output_tokens=self._max_output_tokens,
                     response_mime_type="application/json",
+                    response_schema=StructuredAnswerSchema,
                 ),
             )
         except Exception as exc:
@@ -119,14 +124,19 @@ def _build_user_prompt(
         f"{message.role}: {message.content}" for message in history[-8:]
     ) or "No prior messages in this chat session."
     return f"""
-Conversation memory:
+Conversation memory (prior dialogue for reference only; do not emulate previous message formatting):
 {history_text}
 
-Question:
+Current Question:
 {question}
 
 Retrieved document chunks:
 {context_blocks}
 
-Use the conversation memory only to resolve follow-up references and maintain continuity. Answer with concise reasoning grounded only in the retrieved chunks. If the answer is not in the chunks, say the information is unavailable in the provided documents.
+Instructions:
+- Use the conversation memory only to resolve follow-up references and maintain continuity.
+- Prior assistant messages in memory may be formatted as plain text; ignore their formatting.
+- You MUST always return your response conforming to the required structured JSON schema.
+- Answer with concise reasoning grounded strictly in the retrieved chunks.
+- If the answer is not in the chunks, say the information is unavailable in the provided documents.
 """.strip()
