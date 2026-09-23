@@ -1,7 +1,11 @@
+import logging
+
 from app.application.errors import AnswerGenerationError
 from app.domain.entities import Chunk, ConversationMessage, StructuredRagResponse
 from app.domain.repositories import AnswerGenerator
 from app.infrastructure.structured_answer_parser import parse_structured_answer
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_INSTRUCTION = """
 You are a retrieval-augmented question answering assistant.
@@ -78,6 +82,12 @@ class GeminiAnswerGenerator(AnswerGenerator):
                 ),
             )
         except Exception as exc:
+            logger.error(
+                "Gemini content generation failed with %s: %s",
+                type(exc).__name__,
+                exc,
+                exc_info=True,
+            )
             raise AnswerGenerationError(
                 "Gemini could not generate an answer for this request."
             ) from exc
