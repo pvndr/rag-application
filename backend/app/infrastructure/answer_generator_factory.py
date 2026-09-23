@@ -18,8 +18,12 @@ class DynamicAnswerGeneratorFactory(AnswerGeneratorFactory):
         gemini_max_output_tokens: int,
     ) -> None:
         self._credentials = credentials
-        self._fallback_gemini_api_key = fallback_gemini_api_key
-        self._gemini_model = gemini_model
+        self._fallback_gemini_api_key = (
+            fallback_gemini_api_key.strip() if fallback_gemini_api_key else None
+        )
+        self._gemini_model = (
+            gemini_model.strip() if gemini_model else "gemini-2.5-flash"
+        )
         self._gemini_temperature = gemini_temperature
         self._gemini_max_output_tokens = gemini_max_output_tokens
 
@@ -39,7 +43,8 @@ class DynamicAnswerGeneratorFactory(AnswerGeneratorFactory):
 
         if cred and cred.is_active:
             try:
-                api_key = decrypt_api_key(cred.encrypted_key)
+                decrypted = decrypt_api_key(cred.encrypted_key)
+                api_key = decrypted.strip() if decrypted else None
             except Exception as exc:
                 logger.error("Failed to decrypt Gemini API key for user %s", user_id)
                 raise AnswerGenerationError(
@@ -55,8 +60,8 @@ class DynamicAnswerGeneratorFactory(AnswerGeneratorFactory):
             )
 
         return GeminiAnswerGenerator(
-            api_key=api_key,
-            model=self._gemini_model,
+            api_key=api_key.strip() if api_key else None,
+            model=self._gemini_model.strip() if self._gemini_model else "gemini-2.5-flash",
             temperature=self._gemini_temperature,
             max_output_tokens=self._gemini_max_output_tokens,
         )

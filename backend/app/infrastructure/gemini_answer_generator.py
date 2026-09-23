@@ -35,8 +35,8 @@ class GeminiAnswerGenerator(AnswerGenerator):
         temperature: float,
         max_output_tokens: int,
     ) -> None:
-        self._api_key = api_key
-        self._model = model
+        self._api_key = api_key.strip() if api_key else None
+        self._model = model.strip() if model else "gemini-2.5-flash"
         self._temperature = temperature
         self._max_output_tokens = max_output_tokens
 
